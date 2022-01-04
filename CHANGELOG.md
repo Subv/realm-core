@@ -25,6 +25,7 @@
 * Fix issue compiling in debug mode for iOS.
 * FLX sync now sends the query version in IDENT messages along with the query body ([#5093](https://github.com/realm/realm-core/pull/5093))
 * Errors in C API no longer store or expose a std::exception_ptr. The comparison of realm_async_error_t now compares error code vs object identity. ([#5064](https://github.com/realm/realm-core/pull/5064))
+* ClientHistoryImpl::integrate_server_changesets now throws instead of returning a boolean to indicate success ([#5118](https://github.com/realm/realm-core/pull/5118))
 
 ----------------------------------------------
 
