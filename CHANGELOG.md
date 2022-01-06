@@ -13,6 +13,7 @@
 * Opening a Realm with a schema that has an orphaned embedded object type performed an extra empty write transaction (since v11.0.0).
 * Freezing a Realm with a schema that has orphaned embeeded object types threw a "Wrong transactional state" exception (since v11.5.0).
 * SyncManager::path_for_realm now returns a default path when FLX sync is enabled ([#5088](https://github.com/realm/realm-core/pull/5088))
+* SubscriptionSet::to_ext_json() now handles empty subscription sets correctly ([#5134](https://github.com/realm/realm-core/pull/5134))
 
 ### Breaking changes
 * FLX SubscriptionSet type split into SubscriptionSet and MutableSubscriptionSet to add type safety ([#5092](https://github.com/realm/realm-core/pull/5092))
