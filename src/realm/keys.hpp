@@ -96,11 +96,11 @@ struct ColKey {
     };
 
     constexpr ColKey() noexcept
-        : value(null_value)
+        : value(null_value), dictionary_parent_key(nullptr), dictionary_child_key("")
     {
     }
     constexpr explicit ColKey(int64_t val) noexcept
-        : value(val)
+        : value(val), dictionary_parent_key(nullptr), dictionary_child_key("")
     {
     }
     constexpr ColKey(Idx index, ColumnType type, ColumnAttrMask attrs, uint64_t tag) noexcept
@@ -164,7 +164,15 @@ struct ColKey {
     {
         return (value >> 30) & 0xFFFFFFFFUL;
     }
+
     int64_t value;
+
+    // FIXME: It is probably desirable for ColKey to be a single int64_t,
+    // where would be a good place to store this mapping?
+    // FIXME: Maybe we could use the value itself to store the parent key instead of a (potentially invalid) pointer.
+    ColKey* dictionary_parent_key;
+    // FIXME: This should probably be a Mixed instead of hardcoding the key type to string.
+    const char* dictionary_child_key;
 };
 
 static_assert(ColKey::null_value == 0x7fffffffffffffff, "Fix this");

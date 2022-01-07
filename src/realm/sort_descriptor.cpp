@@ -21,6 +21,7 @@
 #include <realm/db.hpp>
 #include <realm/util/assert.hpp>
 #include <realm/list.hpp>
+#include <realm/object-store/dictionary.hpp>
 
 using namespace realm;
 
@@ -326,14 +327,38 @@ bool BaseDescriptor::Sorter::operator()(IndexPair i, IndexPair j, bool total_ord
             ObjCache& cache_j = m_cache[t - 1][key_j.value & 0xFF];
 
             if (cache_i.key != key_i) {
-                cache_i.value = m_columns[t].table->get_object(key_i).get_any(m_columns[t].col_key);
+                const auto& obj = m_columns[t].table->get_object(key_i);
+                const auto& col_key = m_columns[t].col_key;
+
                 cache_i.key = key_i;
+
+                if (col_key.dictionary_parent_key) {
+                    // Not all objects need have this specific sort key in their dictionary.
+                    util::Optional<Mixed> value =
+                        obj.get_dictionary(*col_key.dictionary_parent_key).try_get(col_key.dictionary_child_key);
+                    cache_i.value = value ? *value : Mixed();
+                }
+                else {
+                    cache_i.value = obj.get_any(col_key);
+                }
             }
             Mixed val_i = cache_i.value;
 
             if (cache_j.key != key_j) {
-                cache_j.value = m_columns[t].table->get_object(key_j).get_any(m_columns[t].col_key);
+                const auto& obj = m_columns[t].table->get_object(key_j);
+                const auto& col_key = m_columns[t].col_key;
+
                 cache_j.key = key_j;
+
+                if (col_key.dictionary_parent_key) {
+                    // Not all objects need have this specific sort key in their dictionary.
+                    util::Optional<Mixed> value =
+                        obj.get_dictionary(*col_key.dictionary_parent_key).try_get(col_key.dictionary_child_key);
+                    cache_j.value = value ? *value : Mixed();
+                }
+                else {
+                    cache_j.value = obj.get_any(col_key);
+                }
             }
 
             c = val_i.compare(cache_j.value);
@@ -368,7 +393,19 @@ void BaseDescriptor::Sorter::cache_first_column(IndexPairs& v)
             }
         }
 
-        index.cached_value = col.table->get_object(key).get_any(ck);
+        const auto obj = col.table->get_object(key);
+        if (ck.dictionary_parent_key) {
+            // FIXME: Assert the col key is actually a dictionary and the elements are numeric/strings. Or maybe check this only once when the Sorter is created?
+            // FIXME: Add support for sorting based on values from Dictionary<Object>.
+            // FIXME: Maybe add support for sorting based on Collection (Array) indexes?
+            // Not all objects need have this specific sort key in their dictionary.
+            util::Optional<Mixed> value =
+                obj.get_dictionary(*ck.dictionary_parent_key).try_get(ck.dictionary_child_key);
+            index.cached_value = value ? *value : Mixed();
+        }
+        else {
+            index.cached_value = obj.get_any(ck);
+        }
     }
 }
 
