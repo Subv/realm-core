@@ -1254,21 +1254,65 @@ std::unique_ptr<DescriptorOrdering> DescriptorOrderingNode::visit(ParserDriver* 
             bool is_distinct = cur_ordering->get_type() == DescriptorNode::DISTINCT;
             std::vector<std::vector<SortableColumnKey>> property_columns;
             for (auto& col_names : cur_ordering->columns) {
+
+                auto subexpr = col_names->visit(drv);
+                std::vector<std::string> path = col_names->path->path_elems;
+                path.push_back(col_names->identifier);
+
                 std::vector<SortableColumnKey> columns;
                 LinkChain link_chain(target);
-                for (size_t ndx_in_path = 0; ndx_in_path < col_names.size(); ++ndx_in_path) {
-                    std::string path_elem = drv->translate(link_chain, col_names[ndx_in_path]);
+                for (size_t ndx_in_path = 0; ndx_in_path < path.size(); ++ndx_in_path) {
+                    std::string path_elem = drv->translate(link_chain, path[ndx_in_path]);
                     ColKey col_key = link_chain.get_current_table()->get_column_key(path_elem);
                     if (!col_key) {
                         throw InvalidQueryError(
                             util::format("No property '%1' found on object type '%2' specified in '%3' clause",
-                                         col_names[ndx_in_path],
+                                         path[ndx_in_path],
                                          drv->get_printable_name(link_chain.get_current_table()->get_name()),
                                          is_distinct ? "distinct" : "sort"));
                     }
-                    columns.push_back(col_key);
-                    if (ndx_in_path < col_names.size() - 1) {
-                        link_chain.link(col_key);
+
+                    if (!col_key.is_dictionary()) {
+                        auto str = util::format("'%1' is not a dictionary property", path[ndx_in_path]);
+                        printf("%s\n", str.c_str());
+
+                        columns.push_back(col_key);
+                        if (ndx_in_path < path.size() - 1) {
+                            link_chain.link(col_key);
+                        }
+                    } else {
+                        auto str = util::format("'%1' is a dictionary property", path[ndx_in_path]);
+                        printf("%s\n", str.c_str());
+
+                        bool is_last_column = ndx_in_path == path.size() - 1;
+
+                        // FIXME: Implement dictionary indexing in any part of the sort path. This would probably require a change in how PathNode stores its elements,
+                        // we would need to save the index of each path element.
+                        if (!is_last_column) {
+                            throw InvalidQueryError(
+                                util::format("Dictionary property '%1' found on object type '%2' specified in '%3' clause cannot appear in the middle of a sorting path",
+                                            path[ndx_in_path],
+                                            drv->get_printable_name(link_chain.get_current_table()->get_name()),
+                                            is_distinct ? "distinct" : "sort"));
+                        }
+
+                        if (col_names->index == nullptr) {
+                            throw InvalidQueryError(
+                                util::format("Dictionary property '%1' found on object type '%2' specified in '%3' clause cannot be used without an index",
+                                            path[ndx_in_path],
+                                            drv->get_printable_name(link_chain.get_current_table()->get_name()),
+                                            is_distinct ? "distinct" : "sort"));
+                        }
+
+                        auto idx = col_names->index->visit(drv, type_String);
+
+                        str = util::format("Using index '%1' for dictionary property '%2'",
+                                           idx->get_mixed().get_string(),
+                                           path[ndx_in_path]);
+
+                        printf("%s\n", str.c_str());
+
+                        columns.push_back(DictionaryKey{col_key, idx->get_mixed().get_string()});
                     }
                 }
                 property_columns.push_back(columns);

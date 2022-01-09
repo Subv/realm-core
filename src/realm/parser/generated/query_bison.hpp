@@ -456,6 +456,7 @@ namespace yy {
       char dummy8[sizeof (PostOpNode*)];
 
       // simple_prop
+      // sort_prop
       char dummy9[sizeof (PropNode*)];
 
       // prop
@@ -708,21 +709,22 @@ namespace yy {
         SYM_distinct_param = 78,                 // distinct_param
         SYM_sort = 79,                           // sort
         SYM_sort_param = 80,                     // sort_param
-        SYM_limit = 81,                          // limit
-        SYM_direction = 82,                      // direction
-        SYM_list = 83,                           // list
-        SYM_list_content = 84,                   // list_content
-        SYM_constant = 85,                       // constant
-        SYM_boolexpr = 86,                       // boolexpr
-        SYM_comp_type = 87,                      // comp_type
-        SYM_post_op = 88,                        // post_op
-        SYM_aggr_op = 89,                        // aggr_op
-        SYM_equality = 90,                       // equality
-        SYM_relational = 91,                     // relational
-        SYM_stringop = 92,                       // stringop
-        SYM_path = 93,                           // path
-        SYM_path_elem = 94,                      // path_elem
-        SYM_id = 95                              // id
+        SYM_sort_prop = 81,                      // sort_prop
+        SYM_limit = 82,                          // limit
+        SYM_direction = 83,                      // direction
+        SYM_list = 84,                           // list
+        SYM_list_content = 85,                   // list_content
+        SYM_constant = 86,                       // constant
+        SYM_boolexpr = 87,                       // boolexpr
+        SYM_comp_type = 88,                      // comp_type
+        SYM_post_op = 89,                        // post_op
+        SYM_aggr_op = 90,                        // aggr_op
+        SYM_equality = 91,                       // equality
+        SYM_relational = 92,                     // relational
+        SYM_stringop = 93,                       // stringop
+        SYM_path = 94,                           // path
+        SYM_path_elem = 95,                      // path_elem
+        SYM_id = 96                              // id
       };
     };
 
@@ -795,6 +797,7 @@ namespace yy {
         break;
 
       case symbol_kind::SYM_simple_prop: // simple_prop
+      case symbol_kind::SYM_sort_prop: // sort_prop
         value.move< PropNode* > (std::move (that.value));
         break;
 
@@ -1163,6 +1166,7 @@ switch (yykind)
         break;
 
       case symbol_kind::SYM_simple_prop: // simple_prop
+      case symbol_kind::SYM_sort_prop: // sort_prop
         value.template destroy< PropNode* > ();
         break;
 
@@ -2549,8 +2553,8 @@ switch (yykind)
     /// Constants.
     enum
     {
-      yylast_ = 351,     ///< Last index in yytable_.
-      yynnts_ = 29,  ///< Number of nonterminal symbols.
+      yylast_ = 367,     ///< Last index in yytable_.
+      yynnts_ = 30,  ///< Number of nonterminal symbols.
       yyfinal_ = 40 ///< Termination state number.
     };
 
@@ -2660,6 +2664,7 @@ switch (yykind)
         break;
 
       case symbol_kind::SYM_simple_prop: // simple_prop
+      case symbol_kind::SYM_sort_prop: // sort_prop
         value.copy< PropNode* > (YY_MOVE (that.value));
         break;
 
@@ -2794,6 +2799,7 @@ switch (yykind)
         break;
 
       case symbol_kind::SYM_simple_prop: // simple_prop
+      case symbol_kind::SYM_sort_prop: // sort_prop
         value.move< PropNode* > (YY_MOVE (s.value));
         break;
 

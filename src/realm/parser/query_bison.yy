@@ -128,7 +128,7 @@ using namespace realm::query_parser;
 %type  <DescriptorNode*> sort sort_param distinct distinct_param limit
 %type  <SubqueryNode*> subquery
 %type  <std::string> path_elem id
-%type  <PropNode*> simple_prop
+%type  <PropNode*> simple_prop sort_prop
 
 %destructor { } <int>
 
@@ -208,14 +208,18 @@ post_query
 distinct: DISTINCT '(' distinct_param ')' { $$ = $3; }
 
 distinct_param
-    : path id                   { $$ = drv.m_parse_nodes.create<DescriptorNode>(DescriptorNode::DISTINCT); $$->add($1->path_elems, $2);}
-    | distinct_param ',' path id { $1->add($3->path_elems, $4); $$ = $1; }
+    : sort_prop                    { $$ = drv.m_parse_nodes.create<DescriptorNode>(DescriptorNode::DISTINCT); $$->add($1);}
+    | distinct_param ',' sort_prop { $1->add($3); $$ = $1; }
 
 sort: SORT '(' sort_param ')'    { $$ = $3; }
 
 sort_param
-    : path id direction         { $$ = drv.m_parse_nodes.create<DescriptorNode>(DescriptorNode::SORT); $$->add($1->path_elems, $2, $3);}
-    | sort_param ',' path id direction  { $1->add($3->path_elems, $4, $5); $$ = $1; }
+    : sort_prop direction                 { $$ = drv.m_parse_nodes.create<DescriptorNode>(DescriptorNode::SORT); $$->add($1, $2);}
+    | sort_param ',' sort_prop direction  { $1->add($3, $4); $$ = $1; }
+
+sort_prop
+    : path id '[' constant ']'  { $$ = drv.m_parse_nodes.create<PropNode>($1, $2, $4, nullptr); }
+    | path id                   { $$ = drv.m_parse_nodes.create<PropNode>($1, $2); }
 
 limit: LIMIT '(' NATURAL0 ')'   { $$ = drv.m_parse_nodes.create<DescriptorNode>(DescriptorNode::LIMIT, $3); }
 

@@ -453,7 +453,7 @@ void verify_query_sub(test_util::unit_test::TestContext& test_context, TableRef 
     }
 }
 
-TEST(Parser_empty_input)
+/*TEST(Parser_empty_input)
 {
     Group g;
     std::string table_name = "table";
@@ -1467,11 +1467,11 @@ TEST(Parser_substitution)
 
     std::string message;
     // referencing a parameter outside of the list size throws
-    CHECK_THROW_ANY_GET_MESSAGE(verify_query_sub(test_context, t, "age > $0", args, /*num_args*/ 0, 0), message);
+    CHECK_THROW_ANY_GET_MESSAGE(verify_query_sub(test_context, t, "age > $0", args, /*num_args*//* 0, 0), message);
     CHECK_EQUAL(message, "Request for argument at index 0 but no arguments are provided");
-    CHECK_THROW_ANY_GET_MESSAGE(verify_query_sub(test_context, t, "age > $1", args, /*num_args*/ 1, 0), message);
+    CHECK_THROW_ANY_GET_MESSAGE(verify_query_sub(test_context, t, "age > $1", args, /*num_args*//* 1, 0), message);
     CHECK_EQUAL(message, "Request for argument at index 1 but only 1 argument is provided");
-    CHECK_THROW_ANY_GET_MESSAGE(verify_query_sub(test_context, t, "age > $2", args, /*num_args*/ 2, 0), message);
+    CHECK_THROW_ANY_GET_MESSAGE(verify_query_sub(test_context, t, "age > $2", args, /*num_args*//* 2, 0), message);
     CHECK_EQUAL(message, "Request for argument at index 2 but only 2 arguments are provided");
     CHECK_THROW_ANY_GET_MESSAGE(t->query("age > $0", std::vector<Mixed>{}), message);
     CHECK_EQUAL(message, "Request for argument at index 0 but no arguments are provided");
@@ -4702,9 +4702,44 @@ TEST(Parser_DictionaryObjects)
     CHECK_EQUAL(q.count(), 1);
 
     verify_query(test_context, persons, "pets.@values.age > 4", 1);
+}*/
+
+TEST(Parser_DictionarySorting)
+{
+    Group g;
+    auto dogs = g.add_table_with_primary_key("dog", type_String, "name");
+    auto col_meta = dogs->add_column_dictionary(type_Int, "meta");
+
+    Obj astro = dogs->create_object_with_primary_key("astro");
+    Obj pluto = dogs->create_object_with_primary_key("pluto");
+    Obj lady = dogs->create_object_with_primary_key("lady");
+    Obj snoopy = dogs->create_object_with_primary_key("snoopy");
+
+    astro.get_dictionary(col_meta).insert("age", 4);
+    pluto.get_dictionary(col_meta).insert("age", 5);
+    lady.get_dictionary(col_meta).insert("age", 6);
+    snoopy.get_dictionary(col_meta).insert("age", 7);
+
+    printf("Testing ASC\n");
+    auto query = verify_query(test_context, dogs, "TRUEPREDICATE SORT(meta[\"age\"] ASC)", 4);
+    auto results = query.find_all();
+
+    CHECK_EQUAL(results.get_object(0).get_key(), astro.get_key());
+    CHECK_EQUAL(results.get_object(1).get_key(), pluto.get_key());
+    CHECK_EQUAL(results.get_object(2).get_key(), lady.get_key());
+    CHECK_EQUAL(results.get_object(3).get_key(), snoopy.get_key());
+
+    printf("Testing DESC\n");
+    query = verify_query(test_context, dogs, "TRUEPREDICATE SORT(meta[\"age\"] DESC)", 4);
+    results = query.find_all();
+
+    CHECK_EQUAL(results.get_object(0).get_key(), snoopy.get_key());
+    CHECK_EQUAL(results.get_object(1).get_key(), lady.get_key());
+    CHECK_EQUAL(results.get_object(2).get_key(), pluto.get_key());
+    CHECK_EQUAL(results.get_object(3).get_key(), astro.get_key());
 }
 
-TEST_TYPES(Parser_DictionaryAggregates, Prop<float>, Prop<double>, Prop<Decimal128>)
+/*TEST_TYPES(Parser_DictionaryAggregates, Prop<float>, Prop<double>, Prop<Decimal128>)
 {
     using type = typename TEST_TYPE::type;
 
@@ -4875,7 +4910,7 @@ TEST(Parser_SetMixed)
     set_values(table->get_object(keys[2]).get_set<Mixed>(col_set), {same_value});
     // the fourth set is empty
     set_values(table->get_object(keys[4]).get_set<Mixed>(col_set),
-               {int64_t(-1), Decimal128(StringData(/*NaN*/)), 4.4f, 7.6, 0, realm::null()});
+               {int64_t(-1), Decimal128(StringData(/*NaN*//*)), 4.4f, 7.6, 0, realm::null()});
     auto list0 = table->get_object(keys[0]).get_set<Mixed>(col_set);
     CHECK_EQUAL(list0.min(), 3);
     CHECK_EQUAL(list0.max(), StringData("hello"));
@@ -5005,7 +5040,7 @@ TEST(Parser_CollectionsConsistency)
     set_values(keys[1], {{3.5f}, {"world"}, {data}, {ObjectId::gen()}, {UUID()}, {}});
     set_values(keys[2], {same_value});
     // the collections at keys[3] are empty
-    set_values(keys[4], {int64_t(-1), Decimal128(StringData(/*NaN*/)), 4.4f, 7.6, 0, realm::null()});
+    set_values(keys[4], {int64_t(-1), Decimal128(StringData(/*NaN*//*)), 4.4f, 7.6, 0, realm::null()});
 
     check_agg(keys[0], 3, StringData("hello"), 303, 151.5);
     check_agg(keys[1], 3.5, UUID(), 3.5, 3.5);
@@ -5186,6 +5221,6 @@ TEST_TYPES(Parser_Arithmetic, Prop<int64_t>, Prop<float>, Prop<double>, Prop<Dec
 
     std::vector<Mixed> args = {2, 50};
     verify_query_sub(test_context, person, "age * $0 == $1", args, 1);
-}
+}*/
 
 #endif // TEST_PARSER
